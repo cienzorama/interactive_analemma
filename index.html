@@ -38,7 +38,7 @@
         </style>
     </head>
 <body>
-    <canvas id="renderCanvas"></canvas>
+    <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
     <script>
         var canvas = document.getElementById("renderCanvas");
 
@@ -55,10 +55,12 @@
         var sceneToRender = null;
         var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
         //|----------------------------------------|
-//|      Representación interactiva        |
-//|         del  Analema  Solar            |
+//|       Representación interactiva       |
+//|            del Analema Solar.          |
+//|  Posición en la órbita y orientación   |
+//|        de la figura de La Tierra       |
 //|                                        |
-//| v0.09h    22/03/2023                   |
+//| v0.11b    29/03/2023                   |
 //|                                        |
 //|        cienzorama@gmail.com            |
 //|----------------------------------------|
@@ -94,14 +96,16 @@ orbit_to_aries_data=[orbit_center,(orbit_center).add(new BABYLON.Vector3(0,-4,0)
 earth_lon=0;
 earth_size=4;
 earth_center=new BABYLON.Vector3(6,-3,0);
-earth_axis_size=4;
+earth_axis_size=3;
 earth_axis_color=new BABYLON.Color3(0.5,0.5,0.5);
 earth_axis_radius=0.05;
 earth_axis_data=[
                  zero.add(new BABYLON.Vector3(0,earth_axis_size,0)),
                  zero.add(new BABYLON.Vector3(0,-earth_axis_size,0))
                 ];
-ea_test_data=[earth_center,(earth_center).add(new BABYLON.Vector3(0,0,-2.1))];
+ea_test_data=[earth_center,(earth_center).add(new BABYLON.Vector3(0,0,-2.0))];
+earth_analema_data=[];
+true_anom=0;
 
 
 //Número de puntos que definen el analema
@@ -163,6 +167,7 @@ function calcula_analema(opt) {
 
         //Posición sobre el plano de la órbita
         //Respecto al centro de la elipse
+        //var tt = tau + ecc * Math.sin(tau) * ( 1.0 + ecc* Math.cos(tau));
         var yv=Math.sqrt(1.0-ecc*ecc)*Math.sin(tau);
         var xv=Math.cos(tau)-ecc;
 
@@ -200,6 +205,7 @@ function calcula_analema(opt) {
             var x11o=rr1*orbit_scale*x11;
             var y11o=rr1*orbit_scale*y11;
             var z11o=rr1*orbit_scale*z11;
+            true_anom=theta1*1.0;
 
             orbit_data_current=(new BABYLON.Vector3(x11o,y11o,z11o)).add(orbit_center);
 
@@ -267,28 +273,53 @@ function calcula_analema(opt) {
         
         if (opt==-1) {
 
+            //Valores máximos y mínimos del tamaño
+            //del analema en pantalla
             if (dec<min_dec_y) {min_dec_y=dec;min_dec_x=eot;}
             if (dec>max_dec_y) {max_dec_y=dec;max_dec_x=eot;}
             if (eot>max_eot) max_eot=eot;
             if (eot<min_eot) min_eot=eot;
 
+            //Datos del analema
             var analema_pos=new BABYLON.Vector3(eot,dec,0);
             analema_data[i]=analema_pos;
 
+            //Datos del analema sobre la figura de La Tierra
+            var pha=earth_lon*dtor+Math.PI;
+            var alat=dec*5*dtor;
+            var alon=(pha-eot*5*dtor)
+            var ax1=0.51*earth_size*Math.cos(alon)*Math.cos(alat);
+            var az1=0.51*earth_size*Math.sin(alon)*Math.cos(alat);
+            var ay1=0.51*earth_size*Math.sin(alat);
+
+            earth_analema_data[i]=new BABYLON.Vector3(ax1,ay1,az1);
+
         } else {
 
+            //Ubicación donde el Sol es cenital
+            //sobre la figura de La Tierra
+            var pha=earth_lon*dtor+Math.PI;
+            var alat=dec*5*dtor;
+            var alon=(pha-eot*5*dtor)
+            var ax1=0.51*earth_size*Math.cos(alon)*Math.cos(alat);
+            var az1=0.51*earth_size*Math.sin(alon)*Math.cos(alat);
+            var ay1=0.51*earth_size*Math.sin(alat);
+
             analema_data_current=new BABYLON.Vector3(eot,dec,-0.01);
+            asun_pos=new BABYLON.Vector3(ax1,ay1,az1)
             break;
         }
 
     }
 
+    //Actualización de las posiciones de órbita y 
+    //la figura de La Tierra en función de la
+    //forma y tamaño del analema
     orbit_center.x=-4+min_eot;
     earth_center.x=4+max_eot;
 
     orbit_to_aries_data=[orbit_center,(orbit_center).add(new BABYLON.Vector3(0,-4,0))];
     ea_test_data=[earth_center,(earth_center).add(new BABYLON.Vector3(0,0,-2.1))];
-
 
 }
 
@@ -301,8 +332,8 @@ var createScene = function () {
     //Cámara
     var camera = new BABYLON.ArcRotateCamera("Camera", 0, 0, 10, zero, scene);
     camera.setPosition(new BABYLON.Vector3(0, 0, -20));
-    //camera.attachControl(canvas, true);
-    //Distancia al cero
+    
+    //Distancia de la cámara al centro
     var cl=20;
     camera.radius=cl;
     //Distancias máximas y mínimas
@@ -313,7 +344,7 @@ var createScene = function () {
     //Posición a la que apunta la cámara
     camera.setTarget(BABYLON.Vector3.Zero());
 
-    //iluminación
+    //Iluminación principal
     var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
 
     //Intensidad de la iluminación
@@ -327,24 +358,41 @@ var createScene = function () {
     calcula_analema(-1);
     calcula_analema(0);
 
-
     //Línea de analema
     analema_line =BABYLON.MeshBuilder.CreateLines ( "analema_line", {points: analema_data},scene,true); 
     analema_line.color = new BABYLON.Color3(1,1,0);
 
-    //Material de las esferas
+    //Material de las esferas del Sol
     var sphere_material = new BABYLON.StandardMaterial("sphere material", scene);
     sphere_material.diffuseColor = new BABYLON.Color3(1, 1, 0);
     sphere_material.specularColor = new BABYLON.Color3(1, 1, 0);
     sphere_material.emissiveColor = new BABYLON.Color3 (1,1,0);
-    //sphere_material.alpha=0.35;
 
-    //Material de las esferas
+
+    //Material azul
+    blue_material = new BABYLON.StandardMaterial("blue material", scene);
+    blue_material.diffuseColor = new BABYLON.Color3(0, 0, 1);
+    blue_material.specularColor = new BABYLON.Color3(0, 0, 1);
+    blue_material.emissiveColor = new BABYLON.Color3 (0 ,0, 1);
+    
+    //Material rojo
+    red_material = new BABYLON.StandardMaterial("red material", scene);
+    red_material.diffuseColor = new BABYLON.Color3(1, 0, 0);
+    red_material.specularColor = new BABYLON.Color3(1, 0, 0);
+    red_material.emissiveColor = new BABYLON.Color3 (1 ,0, 0);
+    
+    //Material verde
+    green_material = new BABYLON.StandardMaterial("green material", scene);
+    green_material.diffuseColor = new BABYLON.Color3(0, 1, 0);
+    green_material.specularColor = new BABYLON.Color3(0, 1, 0);
+    green_material.emissiveColor = new BABYLON.Color3 (0 ,1, 0);
+    
+
+    //Material de la esfera movil sobre el analema
     var sphere_material_red = new BABYLON.StandardMaterial("sphere material", scene);
     sphere_material_red.diffuseColor = new BABYLON.Color3(1, 0, 0);
     sphere_material_red.specularColor = new BABYLON.Color3(1, 0, 0);
     sphere_material_red.emissiveColor = new BABYLON.Color3 (1,0,0);
-    //sphere_material.alpha=0.35;
 
 
     //Puntos del analema
@@ -363,23 +411,19 @@ var createScene = function () {
 
     //Línea de la órbita de La Tierra
     orbit_line = BABYLON.MeshBuilder.CreateLines('orbit',{points: orbit_data},scene);
-    orbit_line.color=orbit_color;
+    orbit_line.material=blue_material;
 
     //Líneas desde el centro hasta el periapsis y el apoapsis
     orbit_peri_line = BABYLON.MeshBuilder.CreateLines('orbit',{points: orbit_peri_data},scene);
-    orbit_peri_line.color=new BABYLON.Color3(1,0,0);
+    orbit_peri_line.material=red_material;
     orbit_apo_line = BABYLON.MeshBuilder.CreateLines('orbit',{points: orbit_apo_data},scene);
-    orbit_apo_line.color=new BABYLON.Color3(0,1,0);
+    orbit_apo_line.material=green_material;
 
+    
     //Posición del Sol (Centro de la órbita)
     sun_orbit = BABYLON.MeshBuilder.CreateSphere("sun_sphere", {segments:5, diameter:0.30}, scene);
     sun_orbit.position=orbit_center;
     sun_orbit.material=sphere_material;
-
-    //Posición del Sol sobre La Tierra
-    sun_earth = BABYLON.MeshBuilder.CreateSphere("sun_sphere", {segments:5, diameter:0.15}, scene);
-    sun_earth.position=ea_test_data[1].subtract(zero);
-    sun_earth.material=sphere_material;
 
 
     //Material de la figura de La Tierra
@@ -394,7 +438,7 @@ var createScene = function () {
     EarthMat.specularColor = new BABYLON.Color3(0,0,0);
     
     //Esfera de La Tierra
-    var EarthSphere = BABYLON.MeshBuilder.CreateSphere("Earth", {diameter:earth_size}, scene);
+    EarthSphere = BABYLON.MeshBuilder.CreateSphere("Earth", {diameter:earth_size}, scene);
     EarthSphere.material = EarthMat;
     EarthSphere.position=earth_center;
     EarthSphere.isBlocker=true;
@@ -421,8 +465,16 @@ var createScene = function () {
     earth_axis_line.parent=EarthSphere;
     earth_axis_line.color=earth_axis_color;
 
-    //Línea que une el Sol con el Centro de La Tierra
-    //ea_test_line=BABYLON.MeshBuilder.CreateLines('line',{points: ea_test_data},scene);
+    earth_analema = BABYLON.MeshBuilder.CreateLines('earth_analemma',{points: earth_analema_data},scene);
+    earth_analema.color=new BABYLON.Color3(1,1,0);
+    earth_analema.parent=EarthSphere;
+
+    //Posición del Sol sobre La Tierra
+    asun_earth = BABYLON.MeshBuilder.CreateSphere("sun_sphere", {segments:5, diameter:0.15}, scene);
+    asun_earth.position=asun_pos;
+    asun_earth.material=sphere_material;
+    asun_earth.parent=EarthSphere;
+
 
     //Línea de dirección al Punto Aries
     orbit_to_aries_line=BABYLON.MeshBuilder.CreateLines('line',{points: orbit_to_aries_data},scene);
@@ -432,7 +484,6 @@ var createScene = function () {
     //Material de la figura de La (mini) Tierra
     var EarthMat2 = new BABYLON.StandardMaterial("earth", scene);
     EarthMat2.diffuseColor = new BABYLON.Color3(1, 1, 1);
-    //EarthMat2.emissiveColor = BABYLON.Color3.White();
     EarthMat2.backFaceCulling = true;
     EarthMat2.diffuseTexture = new BABYLON.Texture(url_em, scene);
     EarthMat2.diffuseTexture.uScale=-1;
@@ -445,23 +496,22 @@ var createScene = function () {
     orbit_current.material=EarthMat2;
     light.excludedMeshes.push(orbit_current);
 
+
     //Rotaciones de La (mini) Tierra                   
     orbit_current.rotation=new BABYLON.Vector3(0, 0, 0);
     orbit_current.rotate(BABYLON.Axis.X, -Math.PI/2, BABYLON.Space.WORLD);
     orbit_current.rotate(BABYLON.Axis.Y, -inclination*dtor, BABYLON.Space.WORLD);
     
+
     //Iluminación de la (mini) Tierra
     var light2 = new BABYLON.PointLight("pointLight", orbit_center, scene);
     light2.position=orbit_center;
     light2.intensity = 15;
-    //light2.includedOnlyMeshes=orbit_current;
 
 
     //Sprite para la indentificación del Punto Aries
     sprite_symbols = new BABYLON.SpriteManager("sprite_symbols", "https://raw.githubusercontent.com/cienzorama/resources/3b572298c228be4e8ab415ed1313d017ca6c7450/orthodromic_plus/syms03.png", 5, 40);
-    
     sprite_symbol=[];
-
     sprite_symbol[0]=new BABYLON.Sprite(0,sprite_symbols);
     sprite_symbol[0].cellIndex = 0;
     sprite_symbol[0].size=1;
@@ -481,7 +531,7 @@ var createScene = function () {
 		
         var dynamicTexture = new BABYLON.DynamicTexture("dynamic texture", {width:256, height:256}, scene);   
 		dynamicTexture.hasAlpha = true;
-		dynamicTexture.drawText(text, null, null, "bold 36px monospace", color , /*"transparent"*/ "#000000", true);
+		dynamicTexture.drawText(text, null, null, "bold 36px monospace", color , "transparent", true);
 
         var plane = BABYLON.MeshBuilder.CreatePlane("plane", {width: size, height: size}, scene);
 		plane.material = new BABYLON.StandardMaterial("TextPlaneMaterial", scene);
@@ -682,6 +732,8 @@ var createScene = function () {
     month_text.fontFamily = 'monospace';
     advancedTexture.addControl(month_text);
 
+
+    //Botón de reseteo de parámetros a los valores iniciales
     var reset_btn = BABYLON.GUI.Button.CreateSimpleButton("RESET", "RESET VALUES");
     reset_btn.color = "white";
     reset_btn.background = "red";
@@ -730,6 +782,9 @@ var createScene = function () {
         if (gcont>2*Math.PI) gcont=0;
 
         //Actualización de las posiciones móviles
+        calcula_analema(-1);
+        calcula_analema(gcont);
+        calcula_analema(-1);
         calcula_analema(gcont);
         analema_current.position=analema_data_current;
         orbit_current.position=orbit_data_current;
@@ -742,24 +797,24 @@ var createScene = function () {
 
         //Actualización de las rotaciones de la tierra durante la animación
         EarthSphere.rotation=new BABYLON.Vector3(0, 0, 0);
-        EarthSphere.rotate(BABYLON.Axis.Y, -Math.PI/2.0-gcont+earth_lon*dtor+analema_data_current.x*5*dtor, BABYLON.Space.WORLD);
+        EarthSphere.rotate(BABYLON.Axis.Y, -Math.PI/2.0-gcont+earth_lon*dtor-analema_data_current.x*5*dtor*Math.cos(analema_data_current.y*5*dtor*0), BABYLON.Space.WORLD);
         EarthSphere.rotate(BABYLON.Axis.X, inclination*dtor, BABYLON.Space.WORLD);
         EarthSphere.rotate(BABYLON.Axis.Y, gcont, BABYLON.Space.WORLD);
 
-
-        //Rotaciones de La (mini) Tierra                   
+        //Actualización de las rotaciones de La (mini) Tierra                   
         orbit_current.rotation=new BABYLON.Vector3(0, 0, 0);
         orbit_current.rotate(BABYLON.Axis.Y, -gcont*50, BABYLON.Space.WORLD);
         orbit_current.rotate(BABYLON.Axis.X, -Math.PI/2, BABYLON.Space.WORLD);
         orbit_current.rotate(BABYLON.Axis.Y, -inclination*dtor, BABYLON.Space.WORLD);
     
+        asun_earth.position=asun_pos;
 
     });
 
     return scene;
 };
 
-
+//Función principal de actualización
 function actualiza() {
 
     //Calcula el analema en función
@@ -771,10 +826,11 @@ function actualiza() {
     calcula_analema(gcont);
 
 
-     //Actualización de la línea de analema
+    //Actualización de la línea de analema
     analema_line.dispose();
     analema_line =BABYLON.MeshBuilder.CreateLines ( "analema_line", {points: analema_data},scene,true); 
     analema_line.color = new BABYLON.Color3(1,1,0);
+
 
     //Actualización de los puntos del analema
     for (var i=0;i<np;i++) {
@@ -782,9 +838,11 @@ function actualiza() {
         analema_spheres[i].position=analema_data[i];
 
     }
+
     //Actualización de la posición de la esfera móvil
     //sobre el analema
     analema_current.position=analema_data_current;
+
 
     //Actualiaxión de la posición de los meses junio y diciembre
     //en función del signo de la declinación y la altura variable
@@ -797,6 +855,7 @@ function actualiza() {
         monthText_Dec.position = new BABYLON.Vector3(max_dec_x,max_dec_y+1,0);
     }
 
+    //Actualización de la posición del texto de periastro
     var peri_text_pos=orbit_peri_data[1].subtract(orbit_peri_data[0]);
     peri_text_pos=peri_text_pos.scale(1.5);
     peri_text_pos=orbit_center.add(peri_text_pos);
@@ -805,15 +864,15 @@ function actualiza() {
     //Actualización de la línea de la órbita
     orbit_line.dispose();
     orbit_line = BABYLON.MeshBuilder.CreateLines('orbit',{points: orbit_data},scene);
-    orbit_line.color=orbit_color;
+    orbit_line.material=blue_material;
 
     //Actualización de las líneas del periapsis y apoapsis
     orbit_peri_line.dispose();
     orbit_peri_line = BABYLON.MeshBuilder.CreateLines('orbit',{points: orbit_peri_data},scene);
-    orbit_peri_line.color=new BABYLON.Color3(1,0,0);
+    orbit_peri_line.material=red_material;
     orbit_apo_line.dispose();
     orbit_apo_line = BABYLON.MeshBuilder.CreateLines('orbit',{points: orbit_apo_data},scene);
-    orbit_apo_line.color=new BABYLON.Color3(0,1,0);
+    orbit_apo_line.material=green_material;
 
     //Actualización de la línea de dirección al Punto Aries
     orbit_to_aries_line.dispose();
@@ -823,8 +882,18 @@ function actualiza() {
     //Actualización de la posición del símbolo del Punto Aries
     sprite_symbol[0].position=(orbit_to_aries_data[1]).add(new BABYLON.Vector3(-0.05,-0.5,0));
 
-    sun_earth.position=ea_test_data[1].subtract(zero);
+    //Actuazliación de la posición del Sol en la órbita
+    //sun_earth.position=ea_test_data[1].subtract(zero);
 
+    //Actualización de la figura del analema sobre la figura de La Tierra
+    earth_analema.dispose();
+    earth_analema = BABYLON.MeshBuilder.CreateLines('earth_analemma',{points: earth_analema_data},scene);
+    earth_analema.color=new BABYLON.Color3(1,1,0);
+    earth_analema.parent=EarthSphere;
+
+    //Posición del Sol sobre la figura de La Tierra
+    asun_earth.position=asun_pos;
+    //asun_earth.parent=EarthSphere;
 
 }
 
