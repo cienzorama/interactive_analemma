@@ -60,9 +60,9 @@
 //|  Posición en la órbita y orientación   |
 //|        de la figura de La Tierra       |
 //|                                        |
-//| v0.11b    29/03/2023                   |
+//| v0.12e   30/03/2023                    |
 //|                                        |
-//|        cienzorama@gmail.com            |
+//|          cienzorama@gmail.com          |
 //|----------------------------------------|
 
 
@@ -87,15 +87,15 @@ analema_data=[];
 
 //Datos de la órbita de La Tierra
 orbit_data=[];
-orbit_center=new BABYLON.Vector3(-6,-3,0);
+orbit_center=new BABYLON.Vector3(-6,-2,0);
 orbit_color=new BABYLON.Color3(0,0,1);
 orbit_scale=2;
-orbit_to_aries_data=[orbit_center,(orbit_center).add(new BABYLON.Vector3(0,-4,0))];
+orbit_to_aries_data=[orbit_center,(orbit_center).add(new BABYLON.Vector3(0,-3,0))];
 
 //Datos de la figura de La Tierra
 earth_lon=0;
 earth_size=4;
-earth_center=new BABYLON.Vector3(6,-3,0);
+earth_center=new BABYLON.Vector3(6,-2,0);
 earth_axis_size=3;
 earth_axis_color=new BABYLON.Color3(0.5,0.5,0.5);
 earth_axis_radius=0.05;
@@ -107,14 +107,13 @@ ea_test_data=[earth_center,(earth_center).add(new BABYLON.Vector3(0,0,-2.0))];
 earth_analema_data=[];
 true_anom=0;
 
-
 //Número de puntos que definen el analema
 np=48;
 
 //Puntos del analema
 analema_spheres=[];
 
-//Contadores
+//Contadores globales
 gcont=0;
 cont=0;
 
@@ -126,7 +125,8 @@ function calcula_analema(opt) {
     //Número ~ de días en un año
     var days=365.242;
 
-    //Parámetros
+    //Ajustes en los parámetros orbitales
+    //y conversión a radianes
     var ecc=eccentricity;
     var inc=inclination*dtor;
     var peri=(360-perihelion)*dtor;
@@ -136,13 +136,12 @@ function calcula_analema(opt) {
     if (opt==-1) {
 
         //Borra el contenido actual
-        // de los datos de la línea de analema
+        //de los datos de la línea de analema
         analema_data=[];
         orbit_data=[];
 
-        //Reseteo las variables
-        //de tamaño de la figura 
-        //del analema
+        //Reseteo las variables de tamaño máximo
+        //y mínimo de la figura del analema
         min_dec_y=1e6;
         max_dec_y=-1e6;
         min_dec_x=0;
@@ -163,7 +162,6 @@ function calcula_analema(opt) {
         } else {
             var tau=opt-lon;
         }
-
 
         //Posición sobre el plano de la órbita
         //Respecto al centro de la elipse
@@ -269,7 +267,6 @@ function calcula_analema(opt) {
         //el meridiano y declinación del Sol (escalado)
         var eot=-Math.atan2(y3,x3)/dtor/5;
         var dec=Math.asin(z3)/dtor/5;
-
         
         if (opt==-1) {
 
@@ -318,7 +315,10 @@ function calcula_analema(opt) {
     orbit_center.x=-4+min_eot;
     earth_center.x=4+max_eot;
 
-    orbit_to_aries_data=[orbit_center,(orbit_center).add(new BABYLON.Vector3(0,-4,0))];
+    //Actualización de la posición del punto aries
+    //y el Sol cenital en función de la
+    //forma y tamaño del analema
+    orbit_to_aries_data=[orbit_center,(orbit_center).add(new BABYLON.Vector3(0,-3,0))];
     ea_test_data=[earth_center,(earth_center).add(new BABYLON.Vector3(0,0,-2.1))];
 
 }
@@ -333,8 +333,9 @@ var createScene = function () {
     var camera = new BABYLON.ArcRotateCamera("Camera", 0, 0, 10, zero, scene);
     camera.setPosition(new BABYLON.Vector3(0, 0, -20));
     
-    //Distancia de la cámara al centro
     var cl=20;
+
+    //Distancia de la cámara al centro
     camera.radius=cl;
     //Distancias máximas y mínimas
     //de la cámara al cero
@@ -368,7 +369,6 @@ var createScene = function () {
     sphere_material.specularColor = new BABYLON.Color3(1, 1, 0);
     sphere_material.emissiveColor = new BABYLON.Color3 (1,1,0);
 
-
     //Material azul
     blue_material = new BABYLON.StandardMaterial("blue material", scene);
     blue_material.diffuseColor = new BABYLON.Color3(0, 0, 1);
@@ -387,8 +387,7 @@ var createScene = function () {
     green_material.specularColor = new BABYLON.Color3(0, 1, 0);
     green_material.emissiveColor = new BABYLON.Color3 (0 ,1, 0);
     
-
-    //Material de la esfera movil sobre el analema
+    //Material de la esfera móvil sobre el analema
     var sphere_material_red = new BABYLON.StandardMaterial("sphere material", scene);
     sphere_material_red.diffuseColor = new BABYLON.Color3(1, 0, 0);
     sphere_material_red.specularColor = new BABYLON.Color3(1, 0, 0);
@@ -418,13 +417,11 @@ var createScene = function () {
     orbit_peri_line.material=red_material;
     orbit_apo_line = BABYLON.MeshBuilder.CreateLines('orbit',{points: orbit_apo_data},scene);
     orbit_apo_line.material=green_material;
-
     
     //Posición del Sol (Centro de la órbita)
     sun_orbit = BABYLON.MeshBuilder.CreateSphere("sun_sphere", {segments:5, diameter:0.30}, scene);
     sun_orbit.position=orbit_center;
     sun_orbit.material=sphere_material;
-
 
     //Material de la figura de La Tierra
     var url_em="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Whole_world_-_land_and_oceans.jpg/2560px-Whole_world_-_land_and_oceans.jpg";
@@ -449,7 +446,6 @@ var createScene = function () {
     EarthSphere.rotate(BABYLON.Axis.X, inclination*dtor, BABYLON.Space.WORLD);
     EarthSphere.rotate(BABYLON.Axis.Y, gcont, BABYLON.Space.WORLD);
 
-    
     //earth_axis_line = BABYLON.MeshBuilder.CreateLines('orbit',{points: earth_axis_data},scene);
 
     //Eje de la tierra
@@ -475,11 +471,9 @@ var createScene = function () {
     asun_earth.material=sphere_material;
     asun_earth.parent=EarthSphere;
 
-
     //Línea de dirección al Punto Aries
     orbit_to_aries_line=BABYLON.MeshBuilder.CreateLines('line',{points: orbit_to_aries_data},scene);
     orbit_to_aries_line.color=new BABYLON.Color3(1,1,1);
-
 
     //Material de la figura de La (mini) Tierra
     var EarthMat2 = new BABYLON.StandardMaterial("earth", scene);
@@ -496,26 +490,38 @@ var createScene = function () {
     orbit_current.material=EarthMat2;
     light.excludedMeshes.push(orbit_current);
 
-
     //Rotaciones de La (mini) Tierra                   
     orbit_current.rotation=new BABYLON.Vector3(0, 0, 0);
     orbit_current.rotate(BABYLON.Axis.X, -Math.PI/2, BABYLON.Space.WORLD);
     orbit_current.rotate(BABYLON.Axis.Y, -inclination*dtor, BABYLON.Space.WORLD);
     
-
     //Iluminación de la (mini) Tierra
     var light2 = new BABYLON.PointLight("pointLight", orbit_center, scene);
     light2.position=orbit_center;
     light2.intensity = 15;
 
 
-    //Sprite para la indentificación del Punto Aries
-    sprite_symbols = new BABYLON.SpriteManager("sprite_symbols", "https://raw.githubusercontent.com/cienzorama/resources/3b572298c228be4e8ab415ed1313d017ca6c7450/orthodromic_plus/syms03.png", 5, 40);
+    //Sprites de Símbolos
+    //Cargado desde los recursos compartidos en github
+    sprite_symbols = new BABYLON.SpriteManager("sprite_symbols", "https://raw.githubusercontent.com/cienzorama/resources/37ce90f6579527c8399e16f8dbfc8653356e3797/orthodromic_plus/syms01_01.png", 5, 40);
     sprite_symbol=[];
+
+    //Sprite para la indentificación del Punto Aries
     sprite_symbol[0]=new BABYLON.Sprite(0,sprite_symbols);
     sprite_symbol[0].cellIndex = 0;
     sprite_symbol[0].size=1;
     sprite_symbol[0].position=(orbit_to_aries_data[1]).add(new BABYLON.Vector3(-0.05,-0.5,0));
+
+    //Posición del símbolo para el periastro
+    var peri_text_pos=orbit_peri_data[1].subtract(orbit_peri_data[0]);
+    peri_text_pos=peri_text_pos.scale(1.3);
+    peri_text_pos=orbit_center.add(peri_text_pos);
+
+    //Sprite para la identificación de la posición del periastro
+    sprite_symbol[1]=new BABYLON.Sprite(0,sprite_symbols);
+    sprite_symbol[1].cellIndex = 2;
+    sprite_symbol[1].size=1;
+    sprite_symbol[1].position=peri_text_pos;
 
 
     //Efecto neón 
@@ -551,16 +557,10 @@ var createScene = function () {
     //Texto del mes de junio
     monthText_Jun = makeTextPlane("JUNE", "yellow", size);
 	monthText_Jun.position = new BABYLON.Vector3(max_dec_x,max_dec_y+1,0);
-    
-    //Texto del periapsis
-    var peri_text_pos=orbit_peri_data[1].subtract(orbit_peri_data[0]);
-    peri_text_pos=peri_text_pos.scale(1.5);
-    peri_text_pos=orbit_center.add(peri_text_pos);
-    periText=makeTextPlane("Per","red",size);
-    periText.position=peri_text_pos;
 
 
     //-----------------GUI-------------------------------
+
 
     var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
 	
@@ -603,7 +603,6 @@ var createScene = function () {
     });
     advancedTexture.addControl(ecc_slider);
 
-
     //Texto y valor de la inclinación
     var inc_text = new BABYLON.GUI.TextBlock();
     inc_text.text="Inclination   " + inclination.toFixed(2)+"º";
@@ -640,7 +639,6 @@ var createScene = function () {
     });
     advancedTexture.addControl(inc_slider);
 
-
     //Texto y valor del argumento del peripasis
     var per_text = new BABYLON.GUI.TextBlock();
     per_text.text="A. Periapsis    " + (perihelion-180).toFixed(0)+"º";
@@ -655,7 +653,6 @@ var createScene = function () {
     per_text.textHorizontalAlignment = al_left;		
     per_text.fontFamily = 'monospace';
     advancedTexture.addControl(per_text);
-
 
     //Control del argumento del periapsis
     per_slider = new BABYLON.GUI.Slider();
@@ -678,7 +675,6 @@ var createScene = function () {
     });
     advancedTexture.addControl(per_slider);
 
-
     //Texto y valor de la longitud de referencia de La Tierra
     var earth_lon_text = new BABYLON.GUI.TextBlock();
     earth_lon_text.text="Center long.    " + (earth_lon).toFixed(0)+"º";
@@ -693,7 +689,6 @@ var createScene = function () {
     earth_lon_text.textHorizontalAlignment = al_left;		
     earth_lon_text.fontFamily = 'monospace';
     advancedTexture.addControl(earth_lon_text);
-
 
     //Control de la longitud de referencia de La Tierra
     earth_lon_slider = new BABYLON.GUI.Slider();
@@ -716,7 +711,6 @@ var createScene = function () {
     });
     advancedTexture.addControl(earth_lon_slider);
 
-
     //Texto de la fecha aproximada
     var month_text = new BABYLON.GUI.TextBlock();
     month_text.text='DATE   ~'+month_names[0];
@@ -731,7 +725,6 @@ var createScene = function () {
     //month_text.textHorizontalAlignment = al_left;		
     month_text.fontFamily = 'monospace';
     advancedTexture.addControl(month_text);
-
 
     //Botón de reseteo de parámetros a los valores iniciales
     var reset_btn = BABYLON.GUI.Button.CreateSimpleButton("RESET", "RESET VALUES");
@@ -767,8 +760,8 @@ var createScene = function () {
     });
     advancedTexture.addControl(reset_btn);
 
-    //----------------END GUI----------------------------
 
+    //----------------END GUI----------------------------
 
 
     //Bucle principal de animación
@@ -825,12 +818,10 @@ function actualiza() {
     calcula_analema(-1);
     calcula_analema(gcont);
 
-
     //Actualización de la línea de analema
     analema_line.dispose();
     analema_line =BABYLON.MeshBuilder.CreateLines ( "analema_line", {points: analema_data},scene,true); 
     analema_line.color = new BABYLON.Color3(1,1,0);
-
 
     //Actualización de los puntos del analema
     for (var i=0;i<np;i++) {
@@ -843,7 +834,6 @@ function actualiza() {
     //sobre el analema
     analema_current.position=analema_data_current;
 
-
     //Actualiaxión de la posición de los meses junio y diciembre
     //en función del signo de la declinación y la altura variable
     //de la figura del analema.
@@ -854,12 +844,6 @@ function actualiza() {
         monthText_Jun.position = new BABYLON.Vector3(min_dec_x,min_dec_y-1,0);
         monthText_Dec.position = new BABYLON.Vector3(max_dec_x,max_dec_y+1,0);
     }
-
-    //Actualización de la posición del texto de periastro
-    var peri_text_pos=orbit_peri_data[1].subtract(orbit_peri_data[0]);
-    peri_text_pos=peri_text_pos.scale(1.5);
-    peri_text_pos=orbit_center.add(peri_text_pos);
-    periText.position=peri_text_pos;
 
     //Actualización de la línea de la órbita
     orbit_line.dispose();
@@ -882,6 +866,12 @@ function actualiza() {
     //Actualización de la posición del símbolo del Punto Aries
     sprite_symbol[0].position=(orbit_to_aries_data[1]).add(new BABYLON.Vector3(-0.05,-0.5,0));
 
+    //Actualización de la posición del símbolo de periastro
+    var peri_text_pos=orbit_peri_data[1].subtract(orbit_peri_data[0]);
+    peri_text_pos=peri_text_pos.scale(1.3);
+    peri_text_pos=orbit_center.add(peri_text_pos);
+    sprite_symbol[1].position=peri_text_pos;
+
     //Actuazliación de la posición del Sol en la órbita
     //sun_earth.position=ea_test_data[1].subtract(zero);
 
@@ -891,7 +881,8 @@ function actualiza() {
     earth_analema.color=new BABYLON.Color3(1,1,0);
     earth_analema.parent=EarthSphere;
 
-    //Posición del Sol sobre la figura de La Tierra
+    //Actualización de la posición del Sol 
+    //sobre la figura de La Tierra
     asun_earth.position=asun_pos;
     //asun_earth.parent=EarthSphere;
 
