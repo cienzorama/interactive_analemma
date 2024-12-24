@@ -3,7 +3,7 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-        <title>Babylon.js sample code</title>
+        <title>Interactive Analema</title>
 
         <!-- Babylon.js -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
@@ -54,7 +54,7 @@
         var scene = null;
         var sceneToRender = null;
         var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
-        //|----------------------------------------|
+//|----------------------------------------|
 //|       Representación interactiva       |
 //|            del Analema Solar.          |
 //|  Posición en la órbita y orientación   |
@@ -117,7 +117,7 @@ analema_spheres=[];
 gcont=0;
 cont=0;
 
-//Nombre de los meses
+//Nombres de los meses
 month_names=["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
 
 function calcula_analema(opt) {
