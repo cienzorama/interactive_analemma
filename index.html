@@ -3,7 +3,7 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-        <title>Interactive Analema</title>
+        <title>cienzorama - Interactive Analema</title>
 
         <!-- Babylon.js -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
@@ -93,7 +93,7 @@ orbit_scale=2;
 orbit_to_aries_data=[orbit_center,(orbit_center).add(new BABYLON.Vector3(0,-3,0))];
 
 //Datos de la figura de La Tierra
-earth_lon=0;
+earth_lon=-26;
 earth_size=4;
 earth_center=new BABYLON.Vector3(6,-2,0);
 earth_axis_size=3;
@@ -117,7 +117,7 @@ analema_spheres=[];
 gcont=0;
 cont=0;
 
-//Nombres de los meses
+//Nombre de los meses
 month_names=["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
 
 function calcula_analema(opt) {
@@ -144,10 +144,13 @@ function calcula_analema(opt) {
         //y mínimo de la figura del analema
         min_dec_y=1e6;
         max_dec_y=-1e6;
+        max_dec_y=-1e6;
         min_dec_x=0;
+        max_dec=-1e6;
         max_dec_x=0;
         min_eot=1e6;
         max_eot=-1e6;
+        analema_scale=1.0;
 
     }
     
@@ -274,6 +277,7 @@ function calcula_analema(opt) {
             //del analema en pantalla
             if (dec<min_dec_y) {min_dec_y=dec;min_dec_x=eot;}
             if (dec>max_dec_y) {max_dec_y=dec;max_dec_x=eot;}
+            if (Math.abs(dec)>max_dec) max_dec=Math.abs(dec);
             if (eot>max_eot) max_eot=eot;
             if (eot<min_eot) min_eot=eot;
 
@@ -302,18 +306,31 @@ function calcula_analema(opt) {
             var az1=0.51*earth_size*Math.sin(alon)*Math.cos(alat);
             var ay1=0.51*earth_size*Math.sin(alat);
 
-            analema_data_current=new BABYLON.Vector3(eot,dec,-0.01);
+            analema_data_current=new BABYLON.Vector3(eot*Math.pow(analema_scale,1.66),dec*analema_scale,-0.01);
             asun_pos=new BABYLON.Vector3(ax1,ay1,az1)
             break;
         }
 
     }
 
+    if (opt==-1) {
+        if (max_dec>5.8) {
+
+            analema_scale=5.8/max_dec;
+            
+            for (i=0;i<np;i++) {
+
+                analema_data[i].multiplyInPlace(new BABYLON.Vector3(Math.pow(analema_scale,1.66),analema_scale,1.0));
+            }   
+
+        }
+    } 
+    
     //Actualización de las posiciones de órbita y 
     //la figura de La Tierra en función de la
     //forma y tamaño del analema
-    orbit_center.x=-4+min_eot;
-    earth_center.x=4+max_eot;
+    orbit_center.x=-4+min_eot*Math.pow(analema_scale,1.66);
+    earth_center.x=4+max_eot*Math.pow(analema_scale,1.66);
 
     //Actualización de la posición del punto aries
     //y el Sol cenital en función de la
@@ -359,15 +376,23 @@ var createScene = function () {
     calcula_analema(-1);
     calcula_analema(0);
 
-    //Línea de analema
-    analema_line =BABYLON.MeshBuilder.CreateLines ( "analema_line", {points: analema_data},scene,true); 
-    analema_line.color = new BABYLON.Color3(1,1,0);
-
     //Material de las esferas del Sol
-    var sphere_material = new BABYLON.StandardMaterial("sphere material", scene);
+    sphere_material = new BABYLON.StandardMaterial("sphere material", scene);
     sphere_material.diffuseColor = new BABYLON.Color3(1, 1, 0);
     sphere_material.specularColor = new BABYLON.Color3(1, 1, 0);
-    sphere_material.emissiveColor = new BABYLON.Color3 (1,1,0);
+    sphere_material.emissiveColor = new BABYLON.Color3 (1, 1, 0);
+
+    //Material amarillo
+    yellow_material = new BABYLON.StandardMaterial("sphere material", scene);
+    yellow_material.diffuseColor = new BABYLON.Color3(1, 1, 0);
+    yellow_material.specularColor = new BABYLON.Color3(1, 1, 0);
+    yellow_material.emissiveColor = new BABYLON.Color3 (1, 1, 0);
+
+    //Material blanco
+    white_material = new BABYLON.StandardMaterial("sphere material", scene);
+    white_material.diffuseColor = new BABYLON.Color3(1, 1, 1);
+    white_material.specularColor = new BABYLON.Color3(1, 1, 1);
+    white_material.emissiveColor = new BABYLON.Color3 (1, 1, 1);
 
     //Material azul
     blue_material = new BABYLON.StandardMaterial("blue material", scene);
@@ -393,6 +418,9 @@ var createScene = function () {
     sphere_material_red.specularColor = new BABYLON.Color3(1, 0, 0);
     sphere_material_red.emissiveColor = new BABYLON.Color3 (1,0,0);
 
+    //Línea de analema
+    analema_line =BABYLON.MeshBuilder.CreateLines ( "analema_line", {points: analema_data},scene,true); 
+    analema_line.material=yellow_material;
 
     //Puntos del analema
     for (var i=0;i<np;i++) {
@@ -462,7 +490,7 @@ var createScene = function () {
     earth_axis_line.color=earth_axis_color;
 
     earth_analema = BABYLON.MeshBuilder.CreateLines('earth_analemma',{points: earth_analema_data},scene);
-    earth_analema.color=new BABYLON.Color3(1,1,0);
+    earth_analema.material=yellow_material;
     earth_analema.parent=EarthSphere;
 
     //Posición del Sol sobre La Tierra
@@ -473,7 +501,7 @@ var createScene = function () {
 
     //Línea de dirección al Punto Aries
     orbit_to_aries_line=BABYLON.MeshBuilder.CreateLines('line',{points: orbit_to_aries_data},scene);
-    orbit_to_aries_line.color=new BABYLON.Color3(1,1,1);
+    orbit_to_aries_line.material=white_material;
 
     //Material de la figura de La (mini) Tierra
     var EarthMat2 = new BABYLON.StandardMaterial("earth", scene);
@@ -531,6 +559,7 @@ var createScene = function () {
     glo.intensity = 1;
     glo.addExcludedMesh(EarthSphere);
     glo.addExcludedMesh(orbit_current);
+    //glo.addExcludedMesh(orbit_to_aries_line);
 
     //Función para añadir texto en el espacio 3D
     var makeTextPlane = function(text, color, size) {
@@ -551,12 +580,12 @@ var createScene = function () {
     var size=4;
 
     //Texto del mes de diciembre y dirección
-    monthText_Dec = makeTextPlane("<- DECEMBER", "yellow", size);
-	monthText_Dec.position = new BABYLON.Vector3(min_dec_x,min_dec_y-1,0);
+    monthText_Dec = makeTextPlane("DECEMBER", "yellow", size);
+	monthText_Dec.position = new BABYLON.Vector3(min_dec_x*analema_scale,min_dec_y*analema_scale-1,0);
     
     //Texto del mes de junio
     monthText_Jun = makeTextPlane("JUNE", "yellow", size);
-	monthText_Jun.position = new BABYLON.Vector3(max_dec_x,max_dec_y+1,0);
+	monthText_Jun.position = new BABYLON.Vector3(max_dec_x*analema_scale,max_dec_y*analema_scale+1,0);
 
 
     //-----------------GUI-------------------------------
@@ -605,7 +634,7 @@ var createScene = function () {
 
     //Texto y valor de la inclinación
     var inc_text = new BABYLON.GUI.TextBlock();
-    inc_text.text="Inclination   " + inclination.toFixed(2)+"º";
+    inc_text.text="Axial Tilt     " + inclination.toFixed(2)+"º";
     inc_text.color = "white";
     inc_text.fontSize = 14;
     inc_text.top="60px";
@@ -635,13 +664,13 @@ var createScene = function () {
     inc_slider.onValueChangedObservable.add(function(value) {
         inclination = inc_slider.value;
         actualiza();
-        inc_text.text="Inclination   " + inclination.toFixed(2)+"º";
+        inc_text.text="Axial Tilt     " + inclination.toFixed(2)+"º";
     });
     advancedTexture.addControl(inc_slider);
 
     //Texto y valor del argumento del peripasis
     var per_text = new BABYLON.GUI.TextBlock();
-    per_text.text="A. Periapsis    " + (perihelion-180).toFixed(0)+"º";
+    per_text.text="Periapsis (w)    " + (perihelion-180).toFixed(0)+"º";
     per_text.color = "white";
     per_text.fontSize = 14;
     per_text.top="110px";
@@ -671,13 +700,13 @@ var createScene = function () {
     per_slider.onValueChangedObservable.add(function(value) {
         perihelion = per_slider.value+180;
         actualiza();
-        per_text.text="A. Periapsis    " + (perihelion-180).toFixed(0)+"º";
+        per_text.text="Periapsis (w)    " + (perihelion-180).toFixed(0)+"º";
     });
     advancedTexture.addControl(per_slider);
 
     //Texto y valor de la longitud de referencia de La Tierra
     var earth_lon_text = new BABYLON.GUI.TextBlock();
-    earth_lon_text.text="Center long.    " + (earth_lon).toFixed(0)+"º";
+    earth_lon_text.text="Longitude       " + (earth_lon).toFixed(0)+"º";
     earth_lon_text.color = "white";
     earth_lon_text.fontSize = 14;
     earth_lon_text.top="160px";
@@ -707,19 +736,19 @@ var createScene = function () {
     earth_lon_slider.onValueChangedObservable.add(function(value) {
         earth_lon = earth_lon_slider.value;
         actualiza();
-        earth_lon_text.text="Center Long.    " + (earth_lon).toFixed(0)+"º";
+        earth_lon_text.text="Longitude       " + (earth_lon).toFixed(0)+"º";
     });
     advancedTexture.addControl(earth_lon_slider);
 
     //Texto de la fecha aproximada
     var month_text = new BABYLON.GUI.TextBlock();
-    month_text.text='DATE   ~'+month_names[0];
+    month_text.text='DATE: '+month_names[0];
     month_text.color = "red";
-    month_text.fontSize = 20;
+    month_text.fontSize = 30;
     month_text.top="10px";
     month_text.left="0px";
-    month_text.height = "15px";
-    month_text.width = "190px";
+    month_text.height = "25px";
+    month_text.width = "280px";
     month_text.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;;
     month_text.verticalAlignment  = al_top;
     //month_text.textHorizontalAlignment = al_left;		
@@ -744,16 +773,16 @@ var createScene = function () {
         eccentricity=0.016709;
         inclination=23.47;
         perihelion=282.9404;
-        earth_lon=0;
+        earth_lon=-26;
 
         ecc_slider.value=eccentricity;
         ecc_text.text="Eccentricity  " + eccentricity.toFixed(4);
         inc_slider.value=inclination;
-        inc_text.text="Inclination   " + inclination.toFixed(2)+"º";
+        inc_text.text="Axial Tilt     " + inclination.toFixed(2)+"º";
         per_slider.value=perihelion-180;
-        per_text.text="A. Periapsis    " + (perihelion-180).toFixed(0)+"º";
+        per_text.text="Periapsis (w)    " + (perihelion-180).toFixed(0)+"º";
         earth_lon_slider.value=earth_lon;
-        earth_lon_text.text="Center Long.    " + (earth_lon).toFixed(0)+"º";
+        earth_lon_text.text="Longitude       " + (earth_lon).toFixed(0)+"º";
 
         actualiza();
 
@@ -786,7 +815,7 @@ var createScene = function () {
         //en el que se encuentra la esfera seleccionada
         var mes=(gcont/(2*Math.PI)*12);
         mes=Math.trunc(mes);
-        month_text.text='DATE   ~'+month_names[mes];;
+        month_text.text='DATE: '+month_names[mes];;
 
         //Actualización de las rotaciones de la tierra durante la animación
         EarthSphere.rotation=new BABYLON.Vector3(0, 0, 0);
@@ -821,7 +850,7 @@ function actualiza() {
     //Actualización de la línea de analema
     analema_line.dispose();
     analema_line =BABYLON.MeshBuilder.CreateLines ( "analema_line", {points: analema_data},scene,true); 
-    analema_line.color = new BABYLON.Color3(1,1,0);
+    analema_line.material=yellow_material;
 
     //Actualización de los puntos del analema
     for (var i=0;i<np;i++) {
@@ -838,11 +867,11 @@ function actualiza() {
     //en función del signo de la declinación y la altura variable
     //de la figura del analema.
     if (inclination>=0) {
-        monthText_Dec.position = new BABYLON.Vector3(min_dec_x,min_dec_y-1,0);
-        monthText_Jun.position = new BABYLON.Vector3(max_dec_x,max_dec_y+1,0);
+        monthText_Dec.position = new BABYLON.Vector3(min_dec_x*analema_scale,min_dec_y*analema_scale-1,0);
+        monthText_Jun.position = new BABYLON.Vector3(max_dec_x*analema_scale,max_dec_y*analema_scale+1,0);
     } else {
-        monthText_Jun.position = new BABYLON.Vector3(min_dec_x,min_dec_y-1,0);
-        monthText_Dec.position = new BABYLON.Vector3(max_dec_x,max_dec_y+1,0);
+        monthText_Jun.position = new BABYLON.Vector3(min_dec_x*analema_scale,min_dec_y*analema_scale-1,0);
+        monthText_Dec.position = new BABYLON.Vector3(max_dec_x*analema_scale,max_dec_y*analema_scale+1,0);
     }
 
     //Actualización de la línea de la órbita
@@ -861,7 +890,7 @@ function actualiza() {
     //Actualización de la línea de dirección al Punto Aries
     orbit_to_aries_line.dispose();
     orbit_to_aries_line=BABYLON.MeshBuilder.CreateLines('line',{points: orbit_to_aries_data},scene);
-    orbit_to_aries_line.color=new BABYLON.Color3(1,1,1);
+    orbit_to_aries_line.material=white_material;
 
     //Actualización de la posición del símbolo del Punto Aries
     sprite_symbol[0].position=(orbit_to_aries_data[1]).add(new BABYLON.Vector3(-0.05,-0.5,0));
@@ -878,7 +907,8 @@ function actualiza() {
     //Actualización de la figura del analema sobre la figura de La Tierra
     earth_analema.dispose();
     earth_analema = BABYLON.MeshBuilder.CreateLines('earth_analemma',{points: earth_analema_data},scene);
-    earth_analema.color=new BABYLON.Color3(1,1,0);
+    //earth_analema.color=new BABYLON.Color3(1,1,0);
+    earth_analema.material=yellow_material;
     earth_analema.parent=EarthSphere;
 
     //Actualización de la posición del Sol 
