@@ -60,7 +60,7 @@
 //|  Posición en la órbita y orientación   |
 //|        de la figura de La Tierra       |
 //|                                        |
-//| v0.12e   30/03/2023                    |
+//| v0.16t   30/12/2024                    |
 //|                                        |
 //|          cienzorama@gmail.com          |
 //|----------------------------------------|
@@ -72,15 +72,6 @@ dtor=Math.PI/180.0;
 //Origen de coordenadas
 zero=new BABYLON.Vector3(0,0,0);
 
-//Parámetros iniciales
-    //Excentricidad
-    eccentricity=0.016709;
-    //Inclinación del plano del ecuador
-    //planetario respecto de la Eclíptica
-    inclination=23.47;
-    //Orientación de la línea de apsides
-    //respecto al Punto Vernal
-    perihelion=282.9404;
 
 //Datos de la línea del analema
 analema_data=[];
@@ -119,6 +110,41 @@ cont=0;
 
 //Nombre de los meses
 month_names=["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+month_namesa=["WINTER","WINTER","WINTER/SPRING","SPRING","SPRING","SPRING/SUMMER","SUMMER","SUMMER","SUMMER/AUTUMN","AUTUMN","AUTUMN","AUTUMN/WINTER"];
+
+planet_id=2;
+planet_id_max=8;
+planet_id_min=1;
+
+planet_names=["MERCURY","VENUS","EARTH","MARS","JUPITER","SATURN","URANUS","NEPTUNE"];
+
+// N,w,e,tilt
+planet_parameters2=[
+                  [ 48.3313, 29.1241,0.205635, 0.03],
+                  [ 76.6799, 54.8910,0.006773, 2.64],
+                  [  0.0000,282.9404,0.016709,23.44],
+                  [ 49.5574,286.5016,0.093405,25.19],
+                  [100.4542,273.8777,0.048498, 3.13],
+                  [113.6634,339.3939,0.055546,26.73],
+                  [ 74.0005, 96.6612,0.047318,82.23],
+                  [131.7806,272.8461,0.008606,28.32]
+                ];
+
+planet_parameters=[
+                  [ 48.3313, 77.4564,0.205635, 0.03],
+                  [ 76.6799,131.5329,0.006773, 2.64],
+                  [  0.0000,102.9471,0.016709,23.44],
+                  [ 49.5574,336.0408,0.093405,25.19],
+                  [100.4542, 14.7538,0.048498, 3.13],
+                  [113.6634, 92.4319,0.055546,26.73],
+                  [ 74.0005,170.9642,0.047318,82.23],
+                  [131.7806, 44.9713,0.008606,28.32]
+                ];               
+
+eccentricity=planet_parameters[planet_id][2]*1.0;
+inclination=planet_parameters[planet_id][3]*1.0;
+perihelion=planet_parameters[planet_id][1]*1.0;
+earth_lon=-26; 
 
 function calcula_analema(opt) {
 
@@ -129,9 +155,11 @@ function calcula_analema(opt) {
     //y conversión a radianes
     var ecc=eccentricity;
     var inc=inclination*dtor;
-    var peri=(360-perihelion)*dtor;
-    var lon=-(peri-Math.PI/2.0);
+    var peri=(perihelion)*dtor;
+    var lon=(peri-Math.PI/2.0);
+    var lon2=lon*1.0;
 
+    if (planet_id==1 || planet_id==3 || planet_id==4) lon=lon+Math.PI/2.0;
     
     if (opt==-1) {
 
@@ -183,9 +211,20 @@ function calcula_analema(opt) {
         var y1=Math.sin(theta+lon);
         var z1=0.0;
 
-        var x1o=rr*orbit_scale*x1;
-        var y1o=rr*orbit_scale*y1;
-        var z1o=rr*orbit_scale*z1;
+        sx1=x1*1.0;sy1=y1*1.0;sz1=z1*1.0;
+
+        if (planet_id==1 || planet_id==3 || planet_id==4) {
+
+            var a1=-Math.PI/2.0;
+
+            sx1=x1*Math.cos(a1)-y1*Math.sin(a1);
+            sy1=x1*Math.sin(a1)+y1*Math.cos(a1);
+            sz1=0.0;
+        }
+
+        var x1o=rr*orbit_scale*sx1;
+        var y1o=rr*orbit_scale*sy1;
+        var z1o=rr*orbit_scale*sz1;
         
         if (opt==-1) {
             orbit_data[i]=(new BABYLON.Vector3(x1o,y1o,z1o)).add(orbit_center);
@@ -199,8 +238,8 @@ function calcula_analema(opt) {
             var theta1=Math.atan2(yv1,xv1);
             var rr1 = Math.sqrt( xv1*xv1 + yv1*yv1 );
 
-            var x11=Math.cos(theta1+lon);
-            var y11=Math.sin(theta1+lon);
+            var x11=Math.cos(theta1+lon2);
+            var y11=Math.sin(theta1+lon2);
             var z11=0.0;
 
             var x11o=rr1*orbit_scale*x11;
@@ -218,8 +257,8 @@ function calcula_analema(opt) {
             var theta1=Math.atan2(yv1,xv1);
             var rr1 = Math.sqrt( xv1*xv1 + yv1*yv1 );
 
-            var x11=Math.cos(theta1+lon);
-            var y11=Math.sin(theta1+lon);
+            var x11=Math.cos(theta1+lon2);
+            var y11=Math.sin(theta1+lon2);
             var z11=0.0;
 
             var x11o=rr1*orbit_scale*x11;
@@ -238,8 +277,8 @@ function calcula_analema(opt) {
             var theta1=Math.atan2(yv1,xv1);
             var rr1 = Math.sqrt( xv1*xv1 + yv1*yv1 );
 
-            var x11=Math.cos(theta1+lon);
-            var y11=Math.sin(theta1+lon);
+            var x11=Math.cos(theta1+lon2);
+            var y11=Math.sin(theta1+lon2);
             var z11=0.0;
 
             var x11o=rr1*orbit_scale*x11;
@@ -452,7 +491,7 @@ var createScene = function () {
     sun_orbit.material=sphere_material;
 
     //Material de la figura de La Tierra
-    var url_em="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Whole_world_-_land_and_oceans.jpg/2560px-Whole_world_-_land_and_oceans.jpg";
+    var url_em="images/earth_map.jpg";
     var EarthMat = new BABYLON.StandardMaterial("earth", scene);
     EarthMat.diffuseColor = new BABYLON.Color3(1, 1, 1);
     EarthMat.emissiveColor = BABYLON.Color3.White();
@@ -531,7 +570,7 @@ var createScene = function () {
 
     //Sprites de Símbolos
     //Cargado desde los recursos compartidos en github
-    sprite_symbols = new BABYLON.SpriteManager("sprite_symbols", "https://raw.githubusercontent.com/cienzorama/resources/37ce90f6579527c8399e16f8dbfc8653356e3797/orthodromic_plus/syms01_01.png", 5, 40);
+    sprite_symbols = new BABYLON.SpriteManager("sprite_symbols", "images/syms01_01.png", 5, 40);
     sprite_symbol=[];
 
     //Sprite para la indentificación del Punto Aries
@@ -564,7 +603,7 @@ var createScene = function () {
     //Función para añadir texto en el espacio 3D
     var makeTextPlane = function(text, color, size) {
 		
-        var dynamicTexture = new BABYLON.DynamicTexture("dynamic texture", {width:256, height:256}, scene);   
+        var dynamicTexture = new BABYLON.DynamicTexture("dynamic texture", {width:300, height:300}, scene);   
 		dynamicTexture.hasAlpha = true;
 		dynamicTexture.drawText(text, null, null, "bold 36px monospace", color , "transparent", true);
 
@@ -580,11 +619,11 @@ var createScene = function () {
     var size=4;
 
     //Texto del mes de diciembre y dirección
-    monthText_Dec = makeTextPlane("DECEMBER", "yellow", size);
+    monthText_Dec = makeTextPlane("NORTHERN WINTER", "yellow", size);
 	monthText_Dec.position = new BABYLON.Vector3(min_dec_x*analema_scale,min_dec_y*analema_scale-1,0);
     
     //Texto del mes de junio
-    monthText_Jun = makeTextPlane("JUNE", "yellow", size);
+    monthText_Jun = makeTextPlane("NORTHERN SUMMER", "yellow", size);
 	monthText_Jun.position = new BABYLON.Vector3(max_dec_x*analema_scale,max_dec_y*analema_scale+1,0);
 
 
@@ -598,7 +637,7 @@ var createScene = function () {
 
     //Texto y valor de la excentricidad
     var ecc_text = new BABYLON.GUI.TextBlock();
-    ecc_text.text="Eccentricity  " + eccentricity.toFixed(4);
+    ecc_text.text="Eccentricity   " + eccentricity.toFixed(4);
     ecc_text.color = "white";
     ecc_text.fontSize = 14;
     ecc_text.top="10px";
@@ -628,7 +667,7 @@ var createScene = function () {
     ecc_slider.onValueChangedObservable.add(function(value) {
         eccentricity = ecc_slider.value;
         actualiza();
-        ecc_text.text="Eccentricity  " + eccentricity.toFixed(4);
+        ecc_text.text="Eccentricity   " + eccentricity.toFixed(4);
     });
     advancedTexture.addControl(ecc_slider);
 
@@ -649,8 +688,8 @@ var createScene = function () {
 
     //Control de la inclinación
     inc_slider = new BABYLON.GUI.Slider();
-    inc_slider.minimum = -65;
-    inc_slider.maximum = 65;
+    inc_slider.minimum = 0;
+    inc_slider.maximum = 89;
     inc_slider.value = inclination;
     inc_slider.step=0.1;
     inc_slider.height = "15px";
@@ -670,7 +709,7 @@ var createScene = function () {
 
     //Texto y valor del argumento del peripasis
     var per_text = new BABYLON.GUI.TextBlock();
-    per_text.text="Periapsis (w)    " + (perihelion-180).toFixed(0)+"º";
+    per_text.text="Perihelion       " + (perihelion).toFixed(0)+"º";
     per_text.color = "white";
     per_text.fontSize = 14;
     per_text.top="110px";
@@ -698,15 +737,15 @@ var createScene = function () {
     per_slider.horizontalAlignment = al_left;
     per_slider.verticalAlignment = al_top;			
     per_slider.onValueChangedObservable.add(function(value) {
-        perihelion = per_slider.value+180;
+        perihelion = per_slider.value;
         actualiza();
-        per_text.text="Periapsis (w)    " + (perihelion-180).toFixed(0)+"º";
+        per_text.text="Perihelion       " + (perihelion).toFixed(0)+"º";
     });
     advancedTexture.addControl(per_slider);
 
     //Texto y valor de la longitud de referencia de La Tierra
     var earth_lon_text = new BABYLON.GUI.TextBlock();
-    earth_lon_text.text="Longitude       " + (earth_lon).toFixed(0)+"º";
+    earth_lon_text.text="Longitude        " + (earth_lon).toFixed(0)+"º";
     earth_lon_text.color = "white";
     earth_lon_text.fontSize = 14;
     earth_lon_text.top="160px";
@@ -736,7 +775,7 @@ var createScene = function () {
     earth_lon_slider.onValueChangedObservable.add(function(value) {
         earth_lon = earth_lon_slider.value;
         actualiza();
-        earth_lon_text.text="Longitude       " + (earth_lon).toFixed(0)+"º";
+        earth_lon_text.text="Longitude        " + (earth_lon).toFixed(0)+"º";
     });
     advancedTexture.addControl(earth_lon_slider);
 
@@ -748,7 +787,7 @@ var createScene = function () {
     month_text.top="10px";
     month_text.left="0px";
     month_text.height = "25px";
-    month_text.width = "280px";
+    month_text.width = "490px";
     month_text.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;;
     month_text.verticalAlignment  = al_top;
     //month_text.textHorizontalAlignment = al_left;		
@@ -756,7 +795,7 @@ var createScene = function () {
     advancedTexture.addControl(month_text);
 
     //Botón de reseteo de parámetros a los valores iniciales
-    var reset_btn = BABYLON.GUI.Button.CreateSimpleButton("RESET", "RESET VALUES");
+    var reset_btn = BABYLON.GUI.Button.CreateSimpleButton("RESET", "RESET TO EARTH");
     reset_btn.color = "white";
     reset_btn.background = "red";
     reset_btn.fontSize = 16;
@@ -770,25 +809,110 @@ var createScene = function () {
     reset_btn.fontFamily = 'monospace';
     reset_btn.onPointerClickObservable.add (function() {
 
-        eccentricity=0.016709;
-        inclination=23.47;
-        perihelion=282.9404;
-        earth_lon=-26;
-
-        ecc_slider.value=eccentricity;
-        ecc_text.text="Eccentricity  " + eccentricity.toFixed(4);
-        inc_slider.value=inclination;
-        inc_text.text="Axial Tilt     " + inclination.toFixed(2)+"º";
-        per_slider.value=perihelion-180;
-        per_text.text="Periapsis (w)    " + (perihelion-180).toFixed(0)+"º";
-        earth_lon_slider.value=earth_lon;
-        earth_lon_text.text="Longitude       " + (earth_lon).toFixed(0)+"º";
-
-        actualiza();
+        planet_id=2;
+        parameter_change()
 
     });
     advancedTexture.addControl(reset_btn);
 
+    //Botón de reseteo de parámetros a los valores iniciales
+    var plntm_btn = BABYLON.GUI.Button.CreateSimpleButton("PLANET_MINUS", "<");
+    plntm_btn.color = "white";
+    plntm_btn.background = "green";
+    plntm_btn.fontSize = 16;
+    plntm_btn.top="270px";
+    plntm_btn.left="10px";
+    plntm_btn.width="20px";
+    plntm_btn.height="30px";
+    plntm_btn.horizontalAlignment = al_left;
+    plntm_btn.verticalAlignment  = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    plntm_btn.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;		
+    plntm_btn.fontFamily = 'monospace';
+    plntm_btn.onPointerClickObservable.add (function() {
+
+        planet_id--;
+        if (planet_id<0) planet_id=0;
+        parameter_change()
+
+    });
+    advancedTexture.addControl(plntm_btn);
+
+
+    //Botón de reseteo de parámetros a los valores iniciales
+    var plntp_btn = BABYLON.GUI.Button.CreateSimpleButton("PLANET_MINUS", ">");
+    plntp_btn.color = "white";
+    plntp_btn.background = "green";
+    plntp_btn.fontSize = 16;
+    plntp_btn.top="270px";
+    plntp_btn.left="150px";
+    plntp_btn.width="20px";
+    plntp_btn.height="30px";
+    plntp_btn.horizontalAlignment = al_left;
+    plntp_btn.verticalAlignment  = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    plntp_btn.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;		
+    plntp_btn.fontFamily = 'monospace';
+    plntp_btn.onPointerClickObservable.add (function() {
+
+        planet_id++;
+        if (planet_id>7) planet_id=7;
+        parameter_change();
+
+    });
+    advancedTexture.addControl(plntp_btn);
+
+
+    //Botón de reseteo de parámetros a los valores iniciales
+    var pname_btn = BABYLON.GUI.Button.CreateSimpleButton("PLANET_NAME", "EARTH");
+    pname_btn.color = "white";
+    pname_btn.background = "green";
+    pname_btn.fontSize = 16;
+    pname_btn.top="270px";
+    pname_btn.left="40px";
+    pname_btn.width="100px";
+    pname_btn.height="30px";
+    pname_btn.horizontalAlignment = al_left;
+    pname_btn.verticalAlignment  = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    pname_btn.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;		
+    pname_btn.fontFamily = 'monospace';
+    pname_btn.onPointerClickObservable.add (function() {
+
+
+    });
+    advancedTexture.addControl(pname_btn);
+
+    function parameter_change() {
+
+        pname_btn.textBlock.text = planet_names[planet_id];
+
+        //N,w,e,tilt
+        eccentricity=planet_parameters[planet_id][2]*1.0;
+        inclination=planet_parameters[planet_id][3]*1.0;
+        perihelion=planet_parameters[planet_id][1]+planet_parameters[planet_id][0]*0;
+        earth_lon=-26;
+
+        /*
+        if (planet_id!=2) {
+            perihelion+=-45;
+            if (planet_id==1) perihelion+=90;
+            if (planet_id==4) perihelion+=70;
+            if (planet_id==6) perihelion+=90;
+            if (planet_id==7) perihelion+=90;
+        }
+        */
+
+        ecc_slider.value=eccentricity;
+        ecc_text.text="Eccentricity   " + eccentricity.toFixed(4);
+        inc_slider.value=inclination;
+        inc_text.text="Axial Tilt     " + inclination.toFixed(2)+"º";
+        var per=perihelion;
+        if (per>360) per-=360;if (per<0) per+=360;
+        per_slider.value=per;
+        per_text.text="Perihelion       " + (per).toFixed(0)+"º";
+        earth_lon_slider.value=earth_lon;
+        earth_lon_text.text="Longitude        " + (earth_lon).toFixed(0)+"º";
+
+        actualiza();
+    }
 
     //----------------END GUI----------------------------
 
@@ -815,7 +939,11 @@ var createScene = function () {
         //en el que se encuentra la esfera seleccionada
         var mes=(gcont/(2*Math.PI)*12);
         mes=Math.trunc(mes);
-        month_text.text='DATE: '+month_names[mes];;
+        if (planet_id==2) {
+            month_text.text='DATE: '+month_names[mes];
+        } else {
+            month_text.text='NORTHERN SEASON: '+month_namesa[mes];
+        }
 
         //Actualización de las rotaciones de la tierra durante la animación
         EarthSphere.rotation=new BABYLON.Vector3(0, 0, 0);
