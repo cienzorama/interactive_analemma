@@ -1,66 +1,70 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-        <title>cienzorama - Interactive Analemma</title>
+    <title>cienzorama - Interactive Analemma</title>
 
-        <!-- Babylon.js -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
-        <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
-        <script src="https://preview.babylonjs.com/ammo.js"></script>
-        <script src="https://preview.babylonjs.com/cannon.js"></script>
-        <script src="https://preview.babylonjs.com/Oimo.js"></script>
-        <script src="https://preview.babylonjs.com/earcut.min.js"></script>
-        <script src="https://preview.babylonjs.com/babylon.js"></script>
-        <script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
-        <script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
-        <script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
-        <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
-        <script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
-        <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
-        <script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+    <!-- Babylon.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+    <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+    <script src="https://preview.babylonjs.com/ammo.js"></script>
+    <script src="https://preview.babylonjs.com/cannon.js"></script>
+    <script src="https://preview.babylonjs.com/Oimo.js"></script>
+    <script src="https://preview.babylonjs.com/earcut.min.js"></script>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+    <script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+    <script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+    <script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+    <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
 
-        <style>
-            html, body {
-                overflow: hidden;
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 0;
-            }
-
-            #renderCanvas {
-                width: 100%;
-                height: 100%;
-                touch-action: none;
-            }
-        </style>
-    </head>
-<body>
-    <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
-    <script>
-        var canvas = document.getElementById("renderCanvas");
-
-        var startRenderLoop = function (engine, canvas) {
-            engine.runRenderLoop(function () {
-                if (sceneToRender && sceneToRender.activeCamera) {
-                    sceneToRender.render();
-                }
-            });
+    <style>
+        html, body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
         }
 
-        var engine = null;
-        var scene = null;
-        var sceneToRender = null;
-        var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+    </style>
+
+</head>
+
+<body>
+<div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
+<script>
+
+var canvas = document.getElementById("renderCanvas");
+
+var startRenderLoop = function (engine, canvas) {
+    engine.runRenderLoop(function () {
+        if (sceneToRender && sceneToRender.activeCamera) {
+            sceneToRender.render();
+        }
+    });
+}
+
+var engine = null;
+var scene = null;
+var sceneToRender = null;
+var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
+
 //|----------------------------------------|
 //|       Representación interactiva       |
 //|            del Analema Solar.          |
 //|  Posición en la órbita y orientación   |
 //|        de la figura de La Tierra       |
 //|                                        |
-//| v0.16t   30/12/2024                    |
+//| v0.17f   31/12/2024                    |
 //|                                        |
 //|          cienzorama@gmail.com          |
 //|----------------------------------------|
@@ -71,7 +75,6 @@ dtor=Math.PI/180.0;
 
 //Origen de coordenadas
 zero=new BABYLON.Vector3(0,0,0);
-
 
 //Datos de la línea del analema
 analema_data=[];
@@ -112,24 +115,18 @@ cont=0;
 month_names=["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
 month_namesa=["WINTER","WINTER","WINTER/SPRING","SPRING","SPRING","SPRING/SUMMER","SUMMER","SUMMER","SUMMER/AUTUMN","AUTUMN","AUTUMN","AUTUMN/WINTER"];
 
+//La Tierra es el planeta inicialmente seleccionado
+//El número indica cualquier otro planeta según la lista inferior
 planet_id=2;
 planet_id_max=8;
 planet_id_min=1;
 
+//Nombre de los planetas
 planet_names=["MERCURY","VENUS","EARTH","MARS","JUPITER","SATURN","URANUS","NEPTUNE"];
 
-// N,w,e,tilt
-planet_parameters2=[
-                  [ 48.3313, 29.1241,0.205635, 0.03],
-                  [ 76.6799, 54.8910,0.006773, 2.64],
-                  [  0.0000,282.9404,0.016709,23.44],
-                  [ 49.5574,286.5016,0.093405,25.19],
-                  [100.4542,273.8777,0.048498, 3.13],
-                  [113.6634,339.3939,0.055546,26.73],
-                  [ 74.0005, 96.6612,0.047318,82.23],
-                  [131.7806,272.8461,0.008606,28.32]
-                ];
-
+//Parámetros orbitales e inclinación de los
+//planetas del Sistema Solar
+//Nodo ascendente, Longitud del periastro, excentricidad, inclinación
 planet_parameters=[
                   [ 48.3313, 77.4564,0.205635, 0.03],
                   [ 76.6799,131.5329,0.006773, 2.64],
@@ -141,9 +138,12 @@ planet_parameters=[
                   [131.7806, 44.9713,0.008606,28.32]
                 ];               
 
+//Parámetros iniciales
 eccentricity=planet_parameters[planet_id][2]*1.0;
 inclination=planet_parameters[planet_id][3]*1.0;
 perihelion=planet_parameters[planet_id][1]*1.0;
+
+//Posición del analema sobre La Tierra en longitud
 earth_lon=-26; 
 
 function calcula_analema(opt) {
@@ -159,6 +159,7 @@ function calcula_analema(opt) {
     var lon=(peri-Math.PI/2.0);
     var lon2=lon*1.0;
 
+    //Corrección para Venus, Júpiter y Saturno (si L<90º)
     if (planet_id==1 || planet_id==3 || planet_id==4) lon=lon+Math.PI/2.0;
     
     if (opt==-1) {
@@ -211,8 +212,9 @@ function calcula_analema(opt) {
         var y1=Math.sin(theta+lon);
         var z1=0.0;
 
+        //Corrección para Venus, Júpiter y Saturno (si L<90º)
+        //Rotación en el eje vertical
         sx1=x1*1.0;sy1=y1*1.0;sz1=z1*1.0;
-
         if (planet_id==1 || planet_id==3 || planet_id==4) {
 
             var a1=-Math.PI/2.0;
@@ -249,7 +251,7 @@ function calcula_analema(opt) {
 
             orbit_data_current=(new BABYLON.Vector3(x11o,y11o,z11o)).add(orbit_center);
 
-            //Cálculo de la posición del periapsis
+            //Cálculo de la posición orbital del periapsis
             var tau1=0;
             var yv1=Math.sqrt(1.0-ecc*ecc)*Math.sin(tau1);
             var xv1=Math.cos(tau1)-ecc;
@@ -269,7 +271,7 @@ function calcula_analema(opt) {
                             (new BABYLON.Vector3(x11o,y11o,z11o)).add(orbit_center)];
 
 
-            //Cálculo de la posición del apoapsis
+            //Cálculo de la posición orbital del apoapsis
             var tau1=Math.PI;
             var yv1=Math.sqrt(1.0-ecc*ecc)*Math.sin(tau1);
             var xv1=Math.cos(tau1)-ecc;
@@ -352,6 +354,9 @@ function calcula_analema(opt) {
 
     }
 
+    //Escalado de la figura del analema
+    //para evitar que salga de pantalla cuando
+    //inclinación seleccionada es superior a 30º
     if (opt==-1) {
         if (max_dec>5.8) {
 
@@ -379,7 +384,7 @@ function calcula_analema(opt) {
 
 }
 
-
+//Creación de la escna principal
 var createScene = function () {
 
     var scene = new BABYLON.Scene(engine);
@@ -407,8 +412,8 @@ var createScene = function () {
     //Intensidad de la iluminación
     light.intensity = 0.7;
 
-    //Calucla el anamela en función
-    //de la excéntricada, inclinación
+    //Calcula el analema en función
+    //de la excentricidad, inclinación
     // y argumento del periapsis
     calcula_analema(-1);
     calcula_analema(0);
@@ -491,8 +496,8 @@ var createScene = function () {
     sun_orbit.material=sphere_material;
 
     //Material de la figura de La Tierra
-    var url_em="images/earth_map.jpg";
-    var EarthMat = new BABYLON.StandardMaterial("earth", scene);
+    url_em="images/earth_map.jpg";
+    EarthMat = new BABYLON.StandardMaterial("earth", scene);
     EarthMat.diffuseColor = new BABYLON.Color3(1, 1, 1);
     EarthMat.emissiveColor = BABYLON.Color3.White();
     EarthMat.backFaceCulling = true;
@@ -528,6 +533,7 @@ var createScene = function () {
     earth_axis_line.parent=EarthSphere;
     earth_axis_line.color=earth_axis_color;
 
+    //Analema sobre la superficie de La Tierra
     earth_analema = BABYLON.MeshBuilder.CreateLines('earth_analemma',{points: earth_analema_data},scene);
     earth_analema.material=yellow_material;
     earth_analema.parent=EarthSphere;
@@ -567,9 +573,7 @@ var createScene = function () {
     light2.position=orbit_center;
     light2.intensity = 15;
 
-
     //Sprites de Símbolos
-    //Cargado desde los recursos compartidos en github
     sprite_symbols = new BABYLON.SpriteManager("sprite_symbols", "images/syms01_01.png", 5, 40);
     sprite_symbol=[];
 
@@ -589,7 +593,6 @@ var createScene = function () {
     sprite_symbol[1].cellIndex = 2;
     sprite_symbol[1].size=1;
     sprite_symbol[1].position=peri_text_pos;
-
 
     //Efecto neón 
     var glo = new BABYLON.GlowLayer("glow_effect", scene, {
@@ -618,17 +621,17 @@ var createScene = function () {
 
     var size=4;
 
-    //Texto del mes de diciembre y dirección
+    //Texto del mes de diciembre (invierno boreal) y dirección
     monthText_Dec = makeTextPlane("NORTHERN WINTER", "yellow", size);
 	monthText_Dec.position = new BABYLON.Vector3(min_dec_x*analema_scale,min_dec_y*analema_scale-1,0);
     
-    //Texto del mes de junio
+    //Texto del mes de junio (verano boreal)
     monthText_Jun = makeTextPlane("NORTHERN SUMMER", "yellow", size);
 	monthText_Jun.position = new BABYLON.Vector3(max_dec_x*analema_scale,max_dec_y*analema_scale+1,0);
 
 
+    //Configuración de la interfaz de usuario
     //-----------------GUI-------------------------------
-
 
     var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
 	
@@ -880,25 +883,24 @@ var createScene = function () {
     });
     advancedTexture.addControl(pname_btn);
 
+    //Función general para cambiar los parámetros
+    //orbitales y la inclinación según el planeta seleccionado
     function parameter_change() {
 
         pname_btn.textBlock.text = planet_names[planet_id];
+        if (planet_id==1 || planet_id==6) {
+            EarthMat.diffuseTexture.uScale=1;
+            EarthMat.diffuseTexture.vScale=1;
+        } else {
+            EarthMat.diffuseTexture.uScale=-1;
+            EarthMat.diffuseTexture.vScale=-1;
+        }
 
         //N,w,e,tilt
         eccentricity=planet_parameters[planet_id][2]*1.0;
         inclination=planet_parameters[planet_id][3]*1.0;
-        perihelion=planet_parameters[planet_id][1]+planet_parameters[planet_id][0]*0;
+        perihelion=planet_parameters[planet_id][1]*1.0;
         earth_lon=-26;
-
-        /*
-        if (planet_id!=2) {
-            perihelion+=-45;
-            if (planet_id==1) perihelion+=90;
-            if (planet_id==4) perihelion+=70;
-            if (planet_id==6) perihelion+=90;
-            if (planet_id==7) perihelion+=90;
-        }
-        */
 
         ecc_slider.value=eccentricity;
         ecc_text.text="Eccentricity   " + eccentricity.toFixed(4);
@@ -957,6 +959,7 @@ var createScene = function () {
         orbit_current.rotate(BABYLON.Axis.X, -Math.PI/2, BABYLON.Space.WORLD);
         orbit_current.rotate(BABYLON.Axis.Y, -inclination*dtor, BABYLON.Space.WORLD);
     
+        //Posición del sol sobre la superficie de La Tierra
         asun_earth.position=asun_pos;
 
     });
@@ -991,6 +994,7 @@ function actualiza() {
     //sobre el analema
     analema_current.position=analema_data_current;
 
+    // (0_o 1.0a) Modificación prevista - La inclinación ahora nunca es negativa -
     //Actualiaxión de la posición de los meses junio y diciembre
     //en función del signo de la declinación y la altura variable
     //de la figura del analema.
@@ -1029,46 +1033,48 @@ function actualiza() {
     peri_text_pos=orbit_center.add(peri_text_pos);
     sprite_symbol[1].position=peri_text_pos;
 
+    // (0_o 2.0a) Modificación prevista - Esta línea se usó para testear, ya no es necesaria
     //Actuazliación de la posición del Sol en la órbita
     //sun_earth.position=ea_test_data[1].subtract(zero);
 
     //Actualización de la figura del analema sobre la figura de La Tierra
     earth_analema.dispose();
     earth_analema = BABYLON.MeshBuilder.CreateLines('earth_analemma',{points: earth_analema_data},scene);
-    //earth_analema.color=new BABYLON.Color3(1,1,0);
     earth_analema.material=yellow_material;
     earth_analema.parent=EarthSphere;
 
     //Actualización de la posición del Sol 
     //sobre la figura de La Tierra
     asun_earth.position=asun_pos;
-    //asun_earth.parent=EarthSphere;
 
 }
 
-                window.initFunction = async function() {
-                    
-                    
-                    var asyncEngineCreation = async function() {
-                        try {
-                        return createDefaultEngine();
-                        } catch(e) {
-                        console.log("the available createEngine function failed. Creating the default engine instead");
-                        return createDefaultEngine();
-                        }
-                    }
+window.initFunction = async function() {
+    
+    
+    var asyncEngineCreation = async function() {
+        try {
+        return createDefaultEngine();
+        } catch(e) {
+        console.log("the available createEngine function failed. Creating the default engine instead");
+        return createDefaultEngine();
+        }
+    }
 
-                    window.engine = await asyncEngineCreation();
-        if (!engine) throw 'engine should not be null.';
-        startRenderLoop(engine, canvas);
-        window.scene = createScene();};
-        initFunction().then(() => {sceneToRender = scene                    
-        });
+    window.engine = await asyncEngineCreation();
 
-        // Resize
-        window.addEventListener("resize", function () {
-            engine.resize();
-        });
-    </script>
+    if (!engine) throw 'engine should not be null.';
+    startRenderLoop(engine, canvas);
+    window.scene = createScene();
+};
+
+initFunction().then(() => {sceneToRender = scene});
+
+// Resize
+window.addEventListener("resize", function () {
+    engine.resize();
+});
+
+</script>
 </body>
 </html>
